@@ -1,0 +1,46 @@
+
+services:
+  nextcloud-db:
+    image: mariadb:11
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: nextcloud
+      MARIADB_USER: nextcloud
+      MARIADB_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+
+  nextcloud:
+    image: nextcloud:apache
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    depends_on:
+      - nextcloud-db
+    environment:
+      MYSQL_HOST: nextcloud-db
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: root
+    volumes:
+      - nextcloud_data:/var/www/html
+
+  collabora:
+    image: collabora/code
+    restart: unless-stopped
+    ports:
+      - "9980:9980"
+    environment:
+      aliasgroup1: "http://8\\.231\\.77\\.108:8081"
+      username: admin
+      password: root
+      extra_params: "--o:ssl.enable=false --o:ssl.termination=false"
+    cap_add:
+      - MKNOD
+
+volumes:
+  db_data:
+  nextcloud_data:
+
